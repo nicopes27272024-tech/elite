@@ -18,11 +18,28 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+- name: Build ELITE
+  shell: pwsh
+  run: |
+    $script = Get-ChildItem -Path . -Filter publish.ps1 -Recurse |
+      Select-Object -First 1
 
-      - name: Build ELITE
-        shell: pwsh
-        run: ./publish.ps1
+    if (-not $script) {
+      Write-Error "No se encontró publish.ps1"
+      Get-ChildItem -Path . -Recurse
+      exit 1
+    }
 
+    Push-Location $script.DirectoryName
+    try {
+      & $script.FullName
+      if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+      }
+    }
+    finally {
+      Pop-Location
+    }
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --yes --no-progress
